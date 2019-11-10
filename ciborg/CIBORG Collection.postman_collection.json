@@ -1,0 +1,287 @@
+{
+	"info": {
+		"_postman_id": "4165bae0-b242-4ef8-a075-f1c95d6a7fb1",
+		"name": "CIBORG Collection",
+		"description": "PI work.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "/mostPopular",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"limit\": 90\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8888/mostPopular",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"mostPopular"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/search",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"limit\": 15,\n\t\"name\": \"m\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8888/search",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"search"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/game_groups",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\": \"myGroup\",\n\t\"description\": \"myGroupDescription\",\n\t\"games\": []\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8888/game_groups",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"game_groups"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/game_groups",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8888/game_groups",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"game_groups"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/game_groups/:group_id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8888/game_groups/:group_id",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"game_groups",
+						":group_id"
+					],
+					"variable": [
+						{
+							"key": "group_id",
+							"value": "olr1Vm4BP2oleIEduDzk"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/game_groups/:group_id",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\": \"hello\",\n\t\"description\": \"world\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8888/game_groups/:group_id",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"game_groups",
+						":group_id"
+					],
+					"variable": [
+						{
+							"key": "group_id",
+							"value": "olr1Vm4BP2oleIEduDzk"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/game_groups/:group_id/games/:game_id",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8888/game_groups/:group_id/games/:game_id",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"game_groups",
+						":group_id",
+						"games",
+						":game_id"
+					],
+					"variable": [
+						{
+							"key": "group_id",
+							"value": ""
+						},
+						{
+							"key": "game_id",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/game_groups/:group_id/games/:game_id",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8888/game_groups/:group_id/games/:game_id",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"game_groups",
+						":group_id",
+						"games",
+						":game_id"
+					],
+					"variable": [
+						{
+							"key": "group_id",
+							"value": "olr1Vm4BP2oleIEduDzk"
+						},
+						{
+							"key": "game_id",
+							"value": "kPDxpJZ8PD"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/games/:game_id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8888/games/:game_id",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"games",
+						":game_id"
+					],
+					"variable": [
+						{
+							"key": "game_id",
+							"value": "kPDxpJZ8PD"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
