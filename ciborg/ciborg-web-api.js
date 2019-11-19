@@ -20,322 +20,149 @@ function noBody(req, done)
     });
 }
 
-module.exports = (router, services) =>
+module.exports = (app, services) =>
 {
-    router.get('/mostPopular', (req, res) => 
+    app.get('/mostPopular', (req, res) => 
     {
         getBody(req, (body) => 
         {
             services.getMostPopularGames(body.limit, (games, error) => 
             {
-                if (error) {
-                    res.status = 500;
-                    res.statusMessage = 'Internal Server Error';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    const answer = { error: error };
-                    
-                    res.end(JSON.stringify(answer));
-                    
-                } else {
-                    
-                    res.status = 200;
-                    res.statusMessage = 'OK';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    const answer = { games: games };
-                    
-                    res.end(JSON.stringify(answer));
-                }
+                if (error)
+                    res.status(500).json({ error: error }); //Internal Server Error
+                else 
+                    res.status(200).json({ games: games }); //OK
             });
         });
     });
 
-    router.get('/search', (req, res) => 
+    app.get('/search', (req, res) => 
     {
         getBody(req, (parameters) =>
         {
             if(!parameters.name || parameters.name.length == 0)
             {
-                res.status = 400;
-                res.statusMessage = 'Bad Request';
-                res.headers = {
-                    'Content-type': 'application/json'
-                }
-                
                 const answer = { error: '\'name\' property required in body' };
-                
-                res.end(JSON.stringify(answer));
+                res.status(400).json(answer); //Bad Request
                 return;
             }
             services.searchGameByName(parameters.name, parameters.limit, (games, error) => 
             {
-                if (error) {
-                    res.status = 500;
-                    res.statusMessage = 'Internal Server Error';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    const answer = { error: error };
-                    
-                    res.end(JSON.stringify(answer));
-                    
-                } else {
-                    
-                    res.status = 200;
-                    res.statusMessage = 'OK';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    const answer = { games: games };
-                    
-                    res.end(JSON.stringify(answer));
-                }
+                if (error)
+                    res.status(500).json({ error: error })//Internal Server Error
+                else
+                    res.status(200).json({ games: games });//OK
             });
         });
     });
 
-    router.post('/game_groups', (req, res) => 
+    app.post('/game_groups', (req, res) => 
     {
         getBody(req, (group) => 
         {
             if(!group.name || !group.description || !group.games)
             {
-                res.status = 400;
-                res.statusMessage = 'Bad Request';
-                res.headers = {
-                    'Content-type': 'application/json'
-                }
-                
                 const answer = { error: 'a group must have a \'name\', a \'description\' and a \'games\' array' };
-                
-                res.end(JSON.stringify(answer));
+                res.status(400).json(answer);//Bad Request
                 return;
             }
             services.addGroup(group, (groupId, error) => 
             {
-                if (error) {
-                    res.status = 500;
-                    res.statusMessage = 'Internal Server Error';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    const answer = { error: error };
-                    
-                    res.end(JSON.stringify(answer));
-                    
-                } else {
-                    
-                    res.status = 201;
-                    res.statusMessage = 'Created';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    const answer = { group_Id: groupId };
-                    
-                    res.end(JSON.stringify(answer));
-                }
+                if (error) 
+                    res.status(500).json({ error: error })//Internal Server Error
+                else    
+                    res.status(201).json({ group_Id: groupId });//Created
+                
             });
         });
     });
 
-    router.get('/game_groups', (req, res) => 
+    app.get('/game_groups', (req, res) => 
     {
         noBody(req, () => 
         {
             services.listGroups((groups, error) => 
             {
-                if (error) {
-                    res.status = 500;
-                    res.statusMessage = 'Internal Server Error';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    const answer = { error: error };
-                    res.end(JSON.stringify(answer));
-                    
-                } else {
-                    
-                    res.status = 200;
-                    res.statusMessage = 'OK';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    const answer = { groups: groups };
-                    res.end(JSON.stringify(answer));
-                }
+                if (error)
+                    res.status(500).json({ error: error });//Internal Server Error
+                else
+                    res.status(200).json({ groups: groups });//OK
             });
         });
     });
 
-    router.get('/game_groups/:group_id', (req, res) => 
+    app.get('/game_groups/:group_id', (req, res) => 
     {
         noBody(req, () => 
         {
-            services.getGroup(req.routerParameters.group_id, (group, error) => 
+            services.getGroup(req.params.group_id, (group, error) => 
             {
-                if (error) {
-                    res.status = 500;
-                    res.statusMessage = 'Internal Server Error';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    const answer = { error: error };
-                    res.end(JSON.stringify(answer));
-                    
-                } else {
-                    
-                    res.status = 200;
-                    res.statusMessage = 'OK';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    const answer = { group: group };
-                    res.end(JSON.stringify(answer));
-                }
+                if (error) 
+                    res.status(500).json({ error: error });//Internal Server Error
+                else 
+                    res.status(200).json({ group: group });
             });
         });
     });
 
-    router.put('/game_groups/:group_id', (req, res) => 
+    app.put('/game_groups/:group_id', (req, res) => 
     {
         getBody(req, (group) => 
         {
             if(!(group.name || group.description))
             {
-                res.status = 400;
-                res.statusMessage = 'Bad Request';
-                res.headers = {
-                    'Content-type': 'application/json'
-                }
-                
                 const answer = { error: 'you need at least a \'name\' or \'description\' property in body' };
-                
-                res.end(JSON.stringify(answer));
+                res.status(400).json(answer);//Bad Request
                 return;
             }
-            services.editGroup(req.routerParameters.group_id, group.name, group.description, (error) => 
+            services.editGroup(req.params.group_id, group.name, group.description, (error) => 
             {
-                if (error) {
-                    res.status = 500;
-                    res.statusMessage = 'Internal Server Error';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    const answer = { error: error };
-                    
-                    res.end(JSON.stringify(answer));
-                    
-                } else {
-                    
-                    res.status = 204;
-                    res.statusMessage = 'No Content';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    res.end();
-                }
+                if (error) 
+                    res.status(500).json({ error: error });//Internal Server Error
+                else 
+                    res.status(204).end();//No Content
             });
         });
     });
 
-    router.put('/game_groups/:group_id/games/:game_id', (req, res) => 
+    app.put('/game_groups/:group_id/games/:game_id', (req, res) => 
     {
         noBody(req, () => 
         {
-            services.addGame(req.routerParameters.group_id, req.routerParameters.game_id, (error) => 
+            services.addGame(req.params.group_id, req.params.game_id, (error) => 
             {
-                if (error) {
-                    res.status = 500;
-                    res.statusMessage = 'Internal Server Error';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    const answer = { error: error };
-                    
-                    res.end(JSON.stringify(answer));
-                    
-                } else {
-                    
-                    res.status = 204;
-                    res.statusMessage = 'No Content';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    res.end();
-                }
+                if (error)
+                    res.status(500).json({ error: error });//Internal Server Error
+                else
+                    res.status(204).end();//No Content';
             });
         });
     });
 
-    router.delete('/game_groups/:group_id/games/:game_id', (req, res) => 
+    app.delete('/game_groups/:group_id/games/:game_id', (req, res) => 
     {
         noBody(req, () => 
         {
-            services.removeGame(req.routerParameters.group_id, req.routerParameters.game_id, (error) => 
+            services.removeGame(req.params.group_id, req.params.game_id, (error) => 
             {
-                if (error) {
-                    res.status = 500;
-                    res.statusMessage = 'Internal Server Error';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    const answer = { error: error };
-                    
-                    res.end(JSON.stringify(answer));
-                    
-                } else {
-                    
-                    res.status = 204;
-                    res.statusMessage = 'No Content';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    
-                    res.end();
-                }
+                if (error)
+                    res.status(500).json({ error: error });//Internal Server Error
+                else
+                    res.status(204).end();
             });
         });
     });
 
-    router.get('/games/:game_id', (req, res) => 
+    app.get('/games/:game_id', (req, res) => 
     {
         noBody(req, () => 
         {
-            services.getGame(req.routerParameters.game_id, (game, error) => 
+            services.getGame(req.params.game_id, (game, error) => 
             {
-                if (error) {
-                    res.status = 500;
-                    res.statusMessage = 'Internal Server Error';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    const answer = { error: error };
-                    res.end(JSON.stringify(answer));
-                    
-                } else {
-                    
-                    res.status = 200;
-                    res.statusMessage = 'OK';
-                    res.headers = {
-                        'Content-type': 'application/json'
-                    }
-                    const answer = { game: game };
-                    res.end(JSON.stringify(answer));
-                }
+                if (error)
+                    res.status(500).json({ error: error });//'Internal Server Error
+                else 
+                    res.status(200).json({ game: game });//OK
             });
         });
     });
