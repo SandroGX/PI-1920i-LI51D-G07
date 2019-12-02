@@ -1,67 +1,66 @@
 'use strict'
 
-const request = require('request');
-
 module.exports = function() 
 {
     let groups = [];
     const m = 
     {
-        addGroup: (group, done) =>
+        addGroup: async(group) =>
         {
             groups.push(group);
-            done(groups.length-1, null);
+            return groups.length-1;
         },
     
-        getGroup: (gID, done) =>
+        getGroup: async(gID) =>
         {
             if(groups[gID])
-                done(JSON.parse(JSON.stringify(groups[gID])), null);
-            else done(null, {error: 'resource not found'})
+                return JSON.parse(JSON.stringify(groups[gID]));
+            else throw {message: 'resource not found'};
         },
 
-        deleteGroup: (gID, done) =>
+        deleteGroup: async(gID) =>
         {
             if(groups[gID]) {
                 groups[gID] = null;
-                done(null);
-            } else done({error: 'resource not found'});
+                return;
+            }
+            else throw {message: 'resource not found'};
         },
         
-        editGroup: (groupID, name, description, done) =>
+        editGroup: async(groupID, name, description) =>
         {
             if(!groups[groupID])
-                done({error: 'resource not found'});
+                throw {message: 'resource not found'};
             groups[groupID].name = name || groups[groupID].name;
             groups[groupID].description = description || groups[groupID].description;
-            done(null);
+            return;
         },
 
-        listGroups: (done) => 
+        listGroups: async() => 
         {
-            done(groups.filter(x => x != null).map(x => ({ id: groups.indexOf(x), ...x})), null);
+            return groups.filter(x => x != null).map(x => ({ id: groups.indexOf(x), ...x}));
         },
 
-        addGame: (groupID, gameID, done) =>
+        addGame: async(groupID, gameID) =>
         {
             if(!groups[groupID])
-                done({error: 'resource not found'});
+                throw {error: 'resource not found'};
             groups[groupID].games.push(gameID);
-            done(null);
+            return;
         },
 
-        removeGame: (groupID, gameID, done) =>
+        removeGame: async(groupID, gameID) =>
         {
             if(!groups[groupID] || !groups[groupID].games.includes(gameID))
-                done({error: 'resource not found'});
+                throw {error: 'resource not found'};
             groups[groupID].games.splice(groups[groupID].games.indexOf(gameID), 1);
-            done(null);
+            return;
         },
 
-        clearIndex: (done) =>
+        clearIndex: async() =>
         {
             groups = [];
-            done(null);
+            return;
         }
     };
     return m;

@@ -8,17 +8,20 @@ const assert = require('assert')
 
 describe('ciborg-services-test', function()
 {
-    beforeEach((done) => 
+    beforeEach(async() => 
     {
-        ciborgDb.clearIndex((error) => { done(); });
+        try {
+            await ciborgDb.clearIndex();
+        } catch(error) {  }
+    });
+    after(async() => 
+    {
+        try {
+            await db.clearIndex();
+        } catch(error) {  }
     });
 
-    afterEach((done) => 
-    {
-        ciborgDb.clearIndex((error) => { done(); });
-    });
-
-    it('Add, Get, Delete Test', (done) =>
+    it('Add, Get, Delete Test', async() =>
     {
         const group = 
         {
@@ -27,31 +30,25 @@ describe('ciborg-services-test', function()
             games: [] 
         }
 
-        services.addGroup(group, (id, error1) => 
-        {
-            services.getGroup(id, (group2, error2) =>
-            {
-                services.deleteGroup(id, (error3) => 
-                {
-                    services.getGroup(id, (group3, error4) => 
-                    {
-                        assert.deepEqual(error1, null)
-                        assert.deepEqual(error2, null);
-                        assert.deepEqual(error3, null);
-                        assert.notDeepEqual(error4, null);
-                        assert.deepEqual(group2, group);
-                        assert.deepEqual(group3, null);
-                        done();
-                    });
-                });
-            });
-        });
+        try {
+            const id = await services.addGroup(group);
+            const group2 = await services.getGroup(id);
+            await services.deleteGroup(id)
+
+            assert.deepEqual(group2, group);
+            try {
+                await services.getGroup(id);
+                assert.fail('group should have been deleted');
+            } catch(error){
+                assert.notDeepEqual(error, null);
+            }
+        } catch(error) {
+            assert.fail(error);
+        }
     });
 
-    
-    it('Add, Remove Game Test', (done) => 
+    it('Add, Remove Game Test', async() => 
     {
-        let groupTestId;
         const groupTestName = 'groupToAddGame';
         const groupTestDescription = 'test to add game';
         const groupToAddGame = 
@@ -59,37 +56,26 @@ describe('ciborg-services-test', function()
             name: groupTestName,
             description: groupTestDescription,
             games: [] 
-        }
-        services.addGroup(groupToAddGame, (id) => 
-        { 
-            groupTestId = id;
+        };
+        
+        try {
+            const id = await services.addGroup(groupToAddGame);
             const gameId = 61;
-            services.addGame(groupTestId, gameId, (error1) => 
-            {
-                services.getGroup(groupTestId, (group1, error2) => 
-                {
-                    services.removeGame(groupTestId, gameId, (error3) => 
-                    {
-                        services.getGroup(groupTestId, (group2, error4) => 
-                        {  
-                            assert.deepEqual(group1.games.length, 1);
-                            assert.deepEqual(group1.games[0], 'name'+gameId);
-                            assert.deepEqual(group2.games.length, 0);
-                            assert.deepEqual(error1, null)
-                            assert.deepEqual(error2, null);
-                            assert.deepEqual(error3, null);
-                            assert.deepEqual(error4, null);
-                            done();
-                        }); 
-                    });
-                });
-            }); 
-        });
+            await services.addGame(id, gameId);
+            const group1 = await services.getGroup(id);
+            await services.removeGame(id, gameId);
+            const group2 = await services.getGroup(id);
+            assert.deepEqual(group1.games.length, 1);
+            assert.deepEqual(group1.games[0], 'name'+gameId);
+            assert.deepEqual(group2.games.length, 0); 
+        }
+        catch(error){
+            assert.fail(error);
+        }
     });
 
-    it('List groups Test', (done) =>
+    it('List groups Test', async() =>
     {
-        let groupTestId;
         const groupTestName = 'groupToList';
         const groupTestDescription = 'test list group';
         const groupToAddGame = 
@@ -98,20 +84,18 @@ describe('ciborg-services-test', function()
             description: groupTestDescription,
             games: [] 
         }
-        services.addGroup(groupToAddGame, (id) => 
-        { 
-            groupTestId = id; 
-            services.listGroups((groups, error) =>
-            {
-                assert.deepEqual(error, null);
-                assert.deepEqual(groups.length, 1);
-                assert.deepEqual(groups[0], { name: groupTestName, id: groupTestId, description: groupTestDescription, games: []});
-                done();
-            });
-        });
+        
+        try {
+            const id = await services.addGroup(groupToAddGame);
+            const groups = await services.listGroups();
+            assert.deepEqual(groups.length, 1);
+            assert.deepEqual(groups[0], { name: groupTestName, id: id, description: groupTestDescription});
+        } catch(error) {
+            assert.fail(error);
+        }
     });
 
-    it('Edit Group', (done) =>
+    it('Edit Group', async() =>
     {
         const groupOriginal = 
         {
@@ -125,46 +109,41 @@ describe('ciborg-services-test', function()
             description: 'test group edit2',
             games: [] 
         }
-        services.addGroup(groupOriginal, (id, error1) => 
-        { 
-            services.editGroup(id, groupExpected.name, groupExpected.description, (error2) => 
-            {
-                services.getGroup(id, (group, error3) => 
-                {
-                    assert.deepEqual(error1, null);
-                    assert.deepEqual(error2, null);
-                    assert.deepEqual(error3, null);
-                    assert.deepEqual(group, groupExpected);
-                    done();
-                });
-            });
-        });
+        try {
+            const id = await services.addGroup(groupOriginal);
+            await services.editGroup(id, groupExpected.name, groupExpected.description);
+            const group = await services.getGroup(id);
+            assert.deepEqual(group, groupExpected);
+        } catch(error) {
+            assert.fail(error);
+        }
     });
 
-    it('get by popularity should return something', function(done){
-        services.getMostPopularGames(null, (games, err) => {
-            assert.deepEqual(err, null);
+    it('get by popularity should return something', async() => {
+        try{
+            const games = await services.getMostPopularGames(null); 
             assert.deepEqual(games.length, 30);
-            done();
-        });
+        } catch(error){
+            assert.fail(error);
+        }
     });
 
-    it('search by name should return something', function(done){
-        services.searchGameByName('m', null, (games, err) => {
-            assert.deepEqual(err, null);
+    it('search by name should return something', async() => {
+        try{
+            const games = await services.searchGameByName('m', null)
             assert.deepEqual(games.length, 30);
-            done();
-        });
+        } catch(error){
+            assert.fail(error);
+        }
     });
 
-    it('get most popular by id', function(done){
-        services.getMostPopularGames(null, (games, error1) => {
-            services.getGame(games[0].id, (game, error2) => {
-                assert.deepEqual(error1, null);
-                assert.deepEqual(error2, null);
-                assert.deepEqual(games[0].id, game.id);
-                done();
-            });
-        });
+    it('get most popular by id', async() => {
+        try{
+            const games = await services.getMostPopularGames(null);
+            const game = await services.getGame(games[0].id);
+            assert.deepEqual(games[0].id, game.id); 
+        } catch(error){
+            assert.fail(error);
+        }
     });
 });

@@ -1,83 +1,65 @@
 'use strict'
 
-const request = require('request');
+const request = require('./request-pr');
 
-module.exports = function (host) {
+module.exports = (host) => {
     const m = {
-        getMostPopularGames: (limit, done) =>
+        getMostPopularGames: async(limit) =>
         {
-            limit = limit || 30;
-            request(`${host}/api/search?order_by=popularity&limit=${limit}&fields=name,id,description&${getClientIDQuery()}`, function (error, response, body)
-            {
-                if(error) {
-                    done(null, error);
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done(null, {error: `${host} couldn\'t get games`, response: response});
-                    return;
-                }
-
-                done(JSON.parse(body).games, null);
-            });
-        },
-
-        searchGameByName: (name, limit, done) =>
-        {
-            limit = limit || 30;
-            request(`${host}/api/search?name=${name}&limit=${limit}&fields=name,id,description&${getClientIDQuery()}`, function (error, response, body)
-            {
-                if(error) {
-                    done(null, error);
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done(null, {error: `${host} couldn\'t get games`, response: response});
-                    return;
-                }
-
-                done(JSON.parse(body).games, null);
-            });
-        },
-
-        getGame: (id, done) =>
-        {
-            request(`${host}/api/search?ids=${id}&${getClientIDQuery()}`, function (error, response, body)
-            {
-                if(error) {
-                    done(null, error)
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done(null, {error: `${host} couldn\'t get game`, response: response});
-                    return;
-                }
-
-                done(JSON.parse(body).games[0], null);
-            });
-        },
-
-        getGamesName: (ids, done) =>
-        {
-            if(!ids || ids.length == 0)
-            {
-                done([], null);
-                return;
+            try{
+                limit = limit || 30;
+                const res =  await request.get(`${host}/api/search?order_by=popularity&limit=${limit}&fields=name,id,description&${getClientIDQuery()}`); 
+                if(res.statusCode >= 400) 
+                    throw {message: `${host} couldn\'t get games`, response: res};   
+                return JSON.parse(res.body).games;
             }
-            const t = ids.reduce((acc, id, i) => acc + id + (i < ids.length-1 ? ',' : ''), '');
-            request(`${host}/api/search?ids=${t}&${getClientIDQuery()}`, function (error, response, body)
-            {
-                if(error) {
-                    done(null, error)
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done(null, {error: `${host} couldn\'t get game`, response: response});
-                    return;
-                }
+            catch(error){
+                throw error;
+            }
+        },
 
-                done(JSON.parse(body).games.map(x => ({id: x.id, name: x.name})), null);
-            });
+        searchGameByName: async(name, limit) =>
+        {
+            try{
+                limit = limit || 30;
+                const res = await request.get(`${host}/api/search?name=${name}&limit=${limit}&fields=name,id,description&${getClientIDQuery()}`);
+                if(res.statusCode >= 400) 
+                    throw {message: `${host} couldn\'t get games`, response: res};
+                return JSON.parse(res.body).games;
+            }
+            catch(error){
+                throw error;
+            }
+        },
+
+        getGame: async(id) =>
+        {
+            try{
+                const res = await request.get(`${host}/api/search?ids=${id}&${getClientIDQuery()}`);
+                if(res.statusCode >= 400) 
+                    throw {message: `${host} couldn\'t get game`, response: res};
+                return JSON.parse(res.body).games[0];
+            }
+            catch(error){
+                throw error;
+            }
+        },
+
+        getGamesName: async(ids) =>
+        {
+            try{
+                if(!ids || ids.length == 0)
+                    return [];
+
+                const t = ids.reduce((acc, id, i) => acc + id + (i < ids.length-1 ? ',' : ''), '');
+                const res = await request.get(`${host}/api/search?ids=${t}&${getClientIDQuery()}`);
+                if(res.statusCode >= 400) 
+                    throw {message: `${host} couldn\'t get game`, response: res};
+                return JSON.parse(res.body).games.map(x => ({id: x.id, name: x.name}));
+            }
+            catch(error){
+                throw error;
+            }   
         }
     };
 

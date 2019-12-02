@@ -1,8 +1,7 @@
 'use strict'
 
-const request = require('request');
 
-module.exports = function () {
+module.exports = () => {
 
     const games = [];
 
@@ -11,29 +10,28 @@ module.exports = function () {
     }
 
     const m = {
-        getMostPopularGames: (limit, done) =>
+        getMostPopularGames: async(limit) =>
         {
             limit = limit || 30;
-            done(games.filter(x => x != null).slice(0, limit), null);
+            return games.filter(x => x != null).slice(0, limit);
         },
 
-        searchGameByName: (name, limit, done) =>
+        searchGameByName: async(name, limit) =>
         {
             limit = limit || 30;
-            done(games.filter(x => x != null && x.name.includes(name)).slice(0, limit));
+            return games.filter(x => x != null && x.name.includes(name)).slice(0, limit);
         },
 
-        getGame: (id, done) =>
+        getGame: async(id) =>
         {
             if(games[id])
-                done(games[id], null);
-            else done(null, {error: 'some error'})
+                return games[id];
+            else throw 'some error';
         },
 
-        getGamesName: (ids, done) =>
+        getGamesName: async(ids) =>
         {
-            const names = games.filter(x=> x != null && ids.includes(x.id)).map(x => x.name);
-            done(names, null);
+            return games.filter(x=> x != null && ids.includes(x.id)).map(x => x.name);
         }
     };
 

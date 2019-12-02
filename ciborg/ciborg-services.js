@@ -3,68 +3,97 @@
 module.exports = (ciborgDb, gamesDb) => {
     const m = 
     {
-        getMostPopularGames: (limit, done) =>
+        getMostPopularGames: async(limit) =>
         {
-            gamesDb.getMostPopularGames(limit, done);
+            try{
+                return await gamesDb.getMostPopularGames(limit);
+            } catch(error) {
+                throw error;
+            }
         },
 
-        searchGameByName: (name, limit, done) =>
+        searchGameByName: async(name, limit) =>
         {
-            gamesDb.searchGameByName(name, limit, done);
+            try {
+            return await gamesDb.searchGameByName(name, limit);
+            } catch(error) {
+                throw error;
+            }
         },
 
-        getGame: (gameId, done) => 
+        getGame: async(gameId) => 
         {
-            gamesDb.getGame(gameId, done);
+            try {
+                return await gamesDb.getGame(gameId);
+            } catch(error) {
+                throw error;
+            }
         },
 
-        addGroup: (group, done) =>
+        addGroup: async(group) =>
         {
-            ciborgDb.addGroup(group, done);
+            try {
+                return await ciborgDb.addGroup(group);
+            } catch(error) {
+                throw error;
+            }
         },
     
-        getGroup: (gID, done) =>
+        getGroup: async(gID) =>
         {
-            ciborgDb.getGroup(gID, (group, error1) => 
-            {
-                if(error1){
-                    done(null, error1);
-                    return;
-                }
-                gamesDb.getGamesName(group.games, (games, error2) => {
-                    if(error2){
-                        done(null, error2);
-                        return;
-                    }
-                    group.games = games;
-                    done(group, null);
-                });
-            });
+            try{
+                const group = await ciborgDb.getGroup(gID);
+                const games = await gamesDb.getGamesName(group.games);
+                group.games = games;
+                return group;
+            } catch(error) {
+                throw error;
+            }
         },
 
-        deleteGroup: (gID, done) =>
+        deleteGroup: async(gID) =>
         {
-            ciborgDb.deleteGroup(gID, done);
+            try {
+                return await ciborgDb.deleteGroup(gID);
+            } catch(error){
+                throw error;
+            }
         },
         
-        editGroup: (groupID, name, description, done) =>
+        editGroup: async(groupID, name, description) =>
         {
-            ciborgDb.editGroup(groupID, name, description, done);
+            try {
+                return await ciborgDb.editGroup(groupID, name, description);
+            } catch(error) {
+                throw error;
+            }
         },
 
-        listGroups: (done) => 
+        listGroups: async() => 
         {
-            ciborgDb.listGroups(done);
+            try {
+                return await ciborgDb.listGroups();
+            } catch(error) {
+                throw error;
+            }
         },
 
-        addGame: (groupID, gameID, done) =>
+        addGame: async(groupID, gameID) =>
         {
-            ciborgDb.addGame(groupID, gameID, done);
+            try {
+                return await ciborgDb.addGame(groupID, gameID);
+            } catch(error) {
+                throw error;
+            }
         },
 
-        removeGame: (groupID, gameID, done) =>
+        removeGame: async(groupID, gameID) =>
         {
-            ciborgDb.removeGame(groupID, gameID, done);
+            try {
+                return await ciborgDb.removeGame(groupID, gameID);
+            } catch(error){
+                throw error;
+            }
         },
 
     };

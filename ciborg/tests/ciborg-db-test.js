@@ -1,27 +1,24 @@
 'use strict'
 
 const assert = require('assert')
+const db = require('../ciborg-db')('localhost', 9200, 'game_groups');
 
 describe('ciborg-db-test', function()
 {
-    let db;
-
-    before((done) => 
+    beforeEach(async() => 
     {
-        db = require('../ciborg-db')('localhost', 9200, 'game_groups');
-        done();
+        try {
+            await db.clearIndex();
+        } catch(error) {  }
     });
-    beforeEach((done) => 
+    after(async() => 
     {
-        db.clearIndex((error) => { done(); });
-    });
-
-    afterEach((done) => 
-    {
-        db.clearIndex((error) => { done(); });
+        try {
+            await db.clearIndex();
+        } catch(error) {  }
     });
 
-    it('Add, Get, Delete Test', (done) =>
+    it('Add, Get, Delete Test', async() =>
     {
         const group = 
         {
@@ -30,31 +27,26 @@ describe('ciborg-db-test', function()
             games: [] 
         }
 
-        db.addGroup(group, (id, error1) => 
-        {
-            db.getGroup(id, (group2, error2) =>
-            {
-                db.deleteGroup(id, (error3) => 
-                {
-                    db.getGroup(id, (group3, error4) => 
-                    {
-                        assert.deepEqual(error1, null)
-                        assert.deepEqual(error2, null);
-                        assert.deepEqual(error3, null);
-                        assert.notDeepEqual(error4, null);
-                        assert.deepEqual(group2, group);
-                        assert.deepEqual(group3, null);
-                        done();
-                    });
-                });
-            });
-        });
+        try {
+            const id = await db.addGroup(group);
+            const group2 = await db.getGroup(id);
+            await db.deleteGroup(id)
+
+            assert.deepEqual(group2, group);
+            try {
+                await db.getGroup(id);
+                assert.fail('group should have been deleted');
+            } catch(error){
+                assert.notDeepEqual(error, null);
+            }
+        } catch(error) {
+            assert.fail(error);
+        }
+        
     });
 
-    
-    it('Add, Remove Game Test', (done) => 
+    it('Add, Remove Game Test', async() => 
     {
-        let groupTestId;
         const groupTestName = 'groupToAddGame';
         const groupTestDescription = 'test to add game';
         const groupToAddGame = 
@@ -63,37 +55,25 @@ describe('ciborg-db-test', function()
             description: groupTestDescription,
             games: [] 
         }
-        db.addGroup(groupToAddGame, (id) => 
-        { 
-            groupTestId = id;
+        try {
+            const id = await db.addGroup(groupToAddGame);
             const gameId = 122;
-            db.addGame(groupTestId, gameId, (error1) => 
-            {
-                db.getGroup(groupTestId, (group1, error2) => 
-                {
-                    db.removeGame(groupTestId, gameId, (error3) => 
-                    {
-                        db.getGroup(groupTestId, (group2, error4) => 
-                        {  
-                            assert.deepEqual(group1.games.length, 1);
-                            assert.deepEqual(group1.games[0], gameId);
-                            assert.deepEqual(group2.games.length, 0);
-                            assert.deepEqual(error1, null)
-                            assert.deepEqual(error2, null);
-                            assert.deepEqual(error3, null);
-                            assert.deepEqual(error4, null);
-                            done();
-                        }); 
-                    });
-                });
-            }); 
-        });
+            await db.addGame(id, gameId);
+            const group1 = await db.getGroup(id);
+            await db.removeGame(id, gameId);
+            const group2 = await db.getGroup(id);
+            assert.deepEqual(group1.games.length, 1);
+            assert.deepEqual(group1.games[0], gameId);
+            assert.deepEqual(group2.games.length, 0); 
+        }
+        catch(error){
+            assert.fail(error);
+        }
     });
 
     //don't understand why it doesn't work honestly, only works in debug mode
-    it('List groups Test', (done) =>
+    it('List groups Test', async() =>
     {
-        let groupTestId;
         const groupTestName = 'groupToList';
         const groupTestDescription = 'test list group';
         const groupToAddGame = 
@@ -102,20 +82,18 @@ describe('ciborg-db-test', function()
             description: groupTestDescription,
             games: [] 
         }
-        db.addGroup(groupToAddGame, (id) => 
-        { 
-            groupTestId = id; 
-            db.listGroups((groups, error) =>
-            {
-                assert.deepEqual(error, null);
-                assert.deepEqual(groups.length, 1);
-                assert.deepEqual(groups[0], { name: groupTestName, id: groupTestId, description: groupTestDescription});
-                done();
-            });
-        });
+        
+        try {
+            const id = await db.addGroup(groupToAddGame);
+            const groups = await db.listGroups();
+            assert.deepEqual(groups.length, 1);
+            assert.deepEqual(groups[0], { name: groupTestName, id: id, description: groupTestDescription});
+        } catch(error) {
+            assert.fail(error);
+        }
     });
 
-    it('Edit Group', (done) =>
+    it('Edit Group', async() =>
     {
         const groupOriginal = 
         {
@@ -129,19 +107,13 @@ describe('ciborg-db-test', function()
             description: 'test group edit2',
             games: [] 
         }
-        db.addGroup(groupOriginal, (id, error1) => 
-        { 
-            db.editGroup(id, groupExpected.name, groupExpected.description, (error2) => 
-            {
-                db.getGroup(id, (group, error3) => 
-                {
-                    assert.deepEqual(error1, null);
-                    assert.deepEqual(error2, null);
-                    assert.deepEqual(error3, null);
-                    assert.deepEqual(group, groupExpected);
-                    done();
-                });
-            });
-        });
+        try {
+            const id = await db.addGroup(groupOriginal);
+            await db.editGroup(id, groupExpected.name, groupExpected.description);
+            const group = await db.getGroup(id);
+            assert.deepEqual(group, groupExpected);
+        } catch(error) {
+            assert.fail(error);
+        }
     });
 });

@@ -1,169 +1,152 @@
 'use strict'
 
-function getBody(req, done)
+function getBody(req)
 {
-    let bodyStr = '';
-    req.on('data', chunk => { bodyStr += chunk.toString(); });
-    req.on('end', () => 
-    {
-        const body = JSON.parse(bodyStr);
-        done(body);
+    return new Promise((resolve, reject) => {
+        let bodyStr = '';
+        req.on('data', chunk => { bodyStr += chunk.toString(); });
+        req.on('end', () => 
+        {
+            req.body = JSON.parse(bodyStr);
+            resolve(req.body);
+        });
+        req.on('error', (error) => {
+            reject(error);
+        });
     });
 }
 
-function noBody(req, done)
+function noBody(req)
 {
-    req.on('data', chunk => { });
-    req.on('end', () => 
-    {
-        done();
+    return new Promise((resolve, reject) => {
+        req.on('data', chunk => {  });
+        req.on('end', () => 
+        {
+            resolve();
+        });
+        req.on('error', (error) => {
+            reject(error);
+        });
     });
 }
 
 module.exports = (app, services) =>
 {
-    app.get('/mostPopular', (req, res) => 
+    app.get('/mostPopular', async(req, res) => 
     {
-        getBody(req, (body) => 
-        {
-            services.getMostPopularGames(body.limit, (games, error) => 
-            {
-                if (error)
-                    res.status(500).json({ error: error }); //Internal Server Error
-                else 
-                    res.status(200).json({ games: games }); //OK
-            });
-        });
+        try{
+            await getBody(req);
+            const games = await services.getMostPopularGames(req.body.limit);
+            res.status(200).json({ games: games }); //OK
+        } catch(error) {
+            res.status(500).json({ error: error }); //Internal Server Error
+        }
     });
 
-    app.get('/search', (req, res) => 
+    app.get('/search', async(req, res) => 
     {
-        getBody(req, (parameters) =>
-        {
+        try {
+            const parameters = await getBody(req);
             if(!parameters.name || parameters.name.length == 0)
             {
                 const answer = { error: '\'name\' property required in body' };
                 res.status(400).json(answer); //Bad Request
                 return;
             }
-            services.searchGameByName(parameters.name, parameters.limit, (games, error) => 
-            {
-                if (error)
-                    res.status(500).json({ error: error })//Internal Server Error
-                else
-                    res.status(200).json({ games: games });//OK
-            });
-        });
+            const games = await services.searchGameByName(parameters.name, parameters.limit);
+            res.status(200).json({ games: games });//OK
+        } catch(error) {
+            res.status(500).json({ error: error })//Internal Server Error
+        }
     });
 
-    app.post('/game_groups', (req, res) => 
+    app.post('/game_groups', async(req, res) => 
     {
-        getBody(req, (group) => 
-        {
+        try {
+            const group = await getBody(req);
             if(!group.name || !group.description || !group.games)
             {
                 const answer = { error: 'a group must have a \'name\', a \'description\' and a \'games\' array' };
                 res.status(400).json(answer);//Bad Request
                 return;
             }
-            services.addGroup(group, (groupId, error) => 
-            {
-                if (error) 
-                    res.status(500).json({ error: error })//Internal Server Error
-                else    
-                    res.status(201).json({ group_Id: groupId });//Created
-                
-            });
-        });
+            const groupId = await services.addGroup(group);
+            res.status(201).json({ group_Id: groupId });//Created
+        } catch(error) {
+            res.status(500).json({ error: error })//Internal Server Error
+        } 
     });
 
-    app.get('/game_groups', (req, res) => 
+    app.get('/game_groups', async(req, res) => 
     {
-        noBody(req, () => 
-        {
-            services.listGroups((groups, error) => 
-            {
-                if (error)
-                    res.status(500).json({ error: error });//Internal Server Error
-                else
-                    res.status(200).json({ groups: groups });//OK
-            });
-        });
+        try {
+            await noBody(req);
+            const groups = await services.listGroups();
+            res.status(200).json({ groups: groups });//OK
+        } catch(error) {
+            res.status(500).json({ error: error });//Internal Server Error
+        }
     });
 
-    app.get('/game_groups/:group_id', (req, res) => 
+    app.get('/game_groups/:group_id', async(req, res) => 
     {
-        noBody(req, () => 
-        {
-            services.getGroup(req.params.group_id, (group, error) => 
-            {
-                if (error) 
-                    res.status(500).json({ error: error });//Internal Server Error
-                else 
-                    res.status(200).json({ group: group });
-            });
-        });
+        try {
+            await noBody(req);
+            const group = await services.getGroup(req.params.group_id);
+            res.status(200).json({ group: group });
+        } catch(error) {
+            res.status(500).json({ error: error });//Internal Server Error
+        }
     });
 
-    app.put('/game_groups/:group_id', (req, res) => 
+    app.put('/game_groups/:group_id', async(req, res) => 
     {
-        getBody(req, (group) => 
-        {
+        try {
+            const group = await getBody(req);
             if(!(group.name || group.description))
             {
                 const answer = { error: 'you need at least a \'name\' or \'description\' property in body' };
                 res.status(400).json(answer);//Bad Request
                 return;
             }
-            services.editGroup(req.params.group_id, group.name, group.description, (error) => 
-            {
-                if (error) 
-                    res.status(500).json({ error: error });//Internal Server Error
-                else 
-                    res.status(204).end();//No Content
-            });
-        });
+            await services.editGroup(req.params.group_id, group.name, group.description);
+            res.status(204).end();//No Content
+        } catch(error) {
+            res.status(500).json({ error: error });//Internal Server Error
+        } 
     });
 
-    app.put('/game_groups/:group_id/games/:game_id', (req, res) => 
+    app.put('/game_groups/:group_id/games/:game_id', async(req, res) => 
     {
-        noBody(req, () => 
-        {
-            services.addGame(req.params.group_id, req.params.game_id, (error) => 
-            {
-                if (error)
-                    res.status(500).json({ error: error });//Internal Server Error
-                else
-                    res.status(204).end();//No Content';
-            });
-        });
+        try {
+            await noBody(req);
+            await services.addGame(req.params.group_id, req.params.game_id);
+            res.status(204).end();//No Content'
+        } catch(error) {
+            res.status(500).json({ error: error });//Internal Server Error
+        }
     });
 
-    app.delete('/game_groups/:group_id/games/:game_id', (req, res) => 
+    app.delete('/game_groups/:group_id/games/:game_id', async(req, res) => 
     {
-        noBody(req, () => 
-        {
-            services.removeGame(req.params.group_id, req.params.game_id, (error) => 
-            {
-                if (error)
-                    res.status(500).json({ error: error });//Internal Server Error
-                else
-                    res.status(204).end();
-            });
-        });
+        try {
+            await noBody(req);
+            await services.removeGame(req.params.group_id, req.params.game_id);
+            res.status(204).end();
+        } catch(error) {
+            res.status(500).json({ error: error });//Internal Server Error
+        }
+            
     });
 
-    app.get('/games/:game_id', (req, res) => 
+    app.get('/games/:game_id', async(req, res) => 
     {
-        noBody(req, () => 
-        {
-            services.getGame(req.params.game_id, (game, error) => 
-            {
-                if (error)
-                    res.status(500).json({ error: error });//'Internal Server Error
-                else 
-                    res.status(200).json({ game: game });//OK
-            });
-        });
+        try {
+            await noBody(req);
+            const game = await services.getGame(req.params.game_id);
+            res.status(200).json({ game: game });//OK
+        } catch(error) {
+            res.status(500).json({ error: error });//'Internal Server Error
+        }
     });
 }

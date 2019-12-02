@@ -1,96 +1,78 @@
 'use strict'
 
-const request = require('request');
+const request = require('./request-pr');
 
 module.exports = function(host, port, indexName) 
 {
     const baseUrl = `http://${host}:${port}/${indexName}`
 
-    const sendUpdateScript = function(id, script, done)
+    const sendUpdateScript = async(id, script) =>
     {
-        request.post
-        (
-            {
+        try {
+            const res = await request.post
+            ({
                 uri: `${baseUrl}/_update/${id}`,
                 headers: { 'content-type': 'application/json'},
                 body: JSON.stringify({ script })
-            },
-            function (error, response, body)
-            {
-                if(error) {
-                    done({}, error)
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done({error: 'database couldn\'t respond'});
-                    return;
-                }
+            });
 
-                done(null);
-            }
-        );
+            if(res.statusCode >= 400)
+                throw {message: 'database couldn\'t respond', response: res};
+                
+        } catch(error) {
+            throw error;
+        }
     }
 
     const m = 
     {
-        addGroup: (group, done) =>
+        addGroup: async(group) =>
         {
-            request.post(
-            {
-                uri: `${baseUrl}/_doc`,
-                headers: { 'content-type': 'application/json'},
-                body: JSON.stringify(group)
-            },
-            function (error, response, body)
-            {
-                if(error) {
-                    done({}, error)
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done({}, {error: 'database couldn\'t respond'});
-                    return;
-                }
+            try {
+                const res = await request.post(
+                {
+                    uri: `${baseUrl}/_doc`,
+                    headers: { 'content-type': 'application/json'},
+                    body: JSON.stringify(group)
+                });
 
-                done(JSON.parse(body)._id, null);
-            });
+                if(res.statusCode >= 400)
+                    throw {message: 'database couldn\'t respond', response: res};
+
+                return JSON.parse(res.body)._id;
+            } catch(error) {
+                throw error;
+            }
         },
     
-        getGroup: (gID, done) =>
+        getGroup: async(gID) =>
         {
-            request.get(`${baseUrl}/_doc/${gID}`, function (error, response, body)
-            {
-                if(error) {
-                    done(null, error)
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done(null, {error: 'database couldn\'t respond'});
-                    return;
-                }
+            try {
+                const res = await request.get(`${baseUrl}/_doc/${gID}`);
+                
+                if(res.statusCode >= 400)
+                    throw {message: 'database couldn\'t respond', response: res};
 
-                done(JSON.parse(body)._source, null);
-            });
+                return JSON.parse(res.body)._source;
+            } catch(error) {
+                throw error;
+            }
         },
 
-        deleteGroup: (gID, done) =>
+        deleteGroup: async(gID) =>
         {
-            request.delete(`${baseUrl}/_doc/${gID}`, function (error, response)
-            {
-                if(error) {
-                    done(error)
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done({error: 'database couldn\'t respond'});
-                    return;
-                }
-
-                done(null);
-            });
+            try {
+                const res = await request.delete(`${baseUrl}/_doc/${gID}`);
+                            
+                if(res.statusCode >= 400)
+                    throw {message: 'database couldn\'t respond', response: res};
+            } catch(error) {
+                throw error;
+            }
+            
         },
         
-        editGroup: (groupID, name, description, done) =>
+        editGroup: async(groupID, name, description) =>
         {
             const script = {
                 lang: 'painless',
@@ -102,31 +84,33 @@ module.exports = function(host, port, indexName)
                 (description ? 'ctx._source.description = params.description;' : '')
             };
 
-            sendUpdateScript(groupID, script, done);
+            try {
+                await sendUpdateScript(groupID, script);
+            } catch(error) {
+                throw error;
+            }
         },
 
-        listGroups: (done) => 
+        listGroups: async() => 
         {
-            request.get(`${baseUrl}/_search`, function (error, response, body)
-            {
-                if(error) {
-                    done(null, error)
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done(null, {error: 'database couldn\'t respond'});
-                    return;
-                }
+            try {
+                const res = await request.get(`${baseUrl}/_search`);
+                
+                if(res.statusCode >= 400)
+                    throw {message: 'database couldn\'t respond', response: res};
 
-                const answer = JSON.parse(body);
+                const answer = JSON.parse(res.body);
                 const hits = answer && answer.hits && answer.hits.hits || [];
                 const groups = hits.map(hit => ({ name: hit._source.name, id: hit._id, description: hit._source.description }));
                 
-                done(groups, null);
-            });
+                return groups;
+            } catch(error) {
+                throw error;
+            }
+            
         },
 
-        addGame: (groupID, gameID, done) =>
+        addGame: async(groupID, gameID) =>
         {
             const script = {
                 lang: 'painless',
@@ -138,10 +122,14 @@ module.exports = function(host, port, indexName)
                     '{ ctx._source.games.add(params.game) }'
             };
 
-            sendUpdateScript(groupID, script, done);
+            try {
+                await sendUpdateScript(groupID, script);
+            } catch(error) {
+                throw error;
+            }
         },
 
-        removeGame: (groupID, gameID, done) =>
+        removeGame: async(groupID, gameID) =>
         {
             const script = {
                 lang: 'painless',
@@ -153,24 +141,23 @@ module.exports = function(host, port, indexName)
                     '{ ctx._source.games.remove(ctx._source.games.indexOf(params.game)) }'
             };
 
-            sendUpdateScript(groupID, script, done);
+            try {
+                await sendUpdateScript(groupID, script);
+            } catch(error) {
+                throw error;
+            }
         },
 
-        clearIndex: (done) =>
+        clearIndex: async() =>
         {
-            request.delete(`${baseUrl}`, function (error, response, body)
+            const res = await request.delete(`${baseUrl}`);
+            try
             {
-                if(error) {
-                    done(error);
-                    return;
-                }
-                if(response.statusCode >= 400) {
-                    done({error: 'database couldn\'t respond'});
-                    return;
-                }
-
-                done(null);
-            });
+                if(res.statusCode >= 400)
+                    throw {message: 'database couldn\'t respond', response: res};
+            } catch(error) {
+                throw error;
+            }
         }
     };
     return m;
